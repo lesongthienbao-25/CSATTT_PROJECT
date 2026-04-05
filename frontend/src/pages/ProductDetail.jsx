@@ -3,7 +3,10 @@ import { useParams } from 'react-router-dom';
 
 const ProductDetail = () => {
     const { id } = useParams();
-    const [reviews, setReviews] = useState([]);
+    const [reviews, setReviews] = useState([
+  { id: 1, user: "Hacker UEH", content: "<img src=x onerror=\"alert('XSS_Success_UEH')\">" },
+  { id: 2, user: "Trung", content: "Sản phẩm xịn lắm nha mọi người!" }
+]);
     const [newReview, setNewReview] = useState({ author: '', content: '', rating: 5 });
 
     const fetchReviews = async () => {
