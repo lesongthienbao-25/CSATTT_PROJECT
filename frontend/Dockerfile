@@ -5,7 +5,11 @@ WORKDIR /app
 COPY package.json .
 RUN npm install
 
-COPY . .
+COPY src src
+COPY index.html .
+COPY vite.config.js .
+COPY tailwind.config.js .
+COPY postcss.config.js .
 
 EXPOSE 3000
 

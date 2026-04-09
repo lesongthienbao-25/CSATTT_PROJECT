@@ -31,7 +31,9 @@ services:
       - corpnet
 
   frontend:
-    build: ./frontend
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
     container_name: corpvuln_frontend
     ports:
       - "3000:3000"

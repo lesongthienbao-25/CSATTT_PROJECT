@@ -1,194 +1,309 @@
 import React, { useState, useEffect } from 'react';
-import { useParams } from 'react-router-dom';
+import { useParams, Link } from 'react-router-dom';
+import StockCheckerModal from '../components/StockCheckerModal';
 
 const ProductDetail = () => {
   const { id } = useParams();
   const productId = parseInt(id);
 
-  // 1. Kho dữ liệu sản phẩm (Đồng bộ với Catalog)
-  const productDatabase = [
-    { id: 1, name: "Laptop Enterprise v1", price: "24.990.000đ", img: "https://images.unsplash.com/photo-1517336714731-489689fd1ca8?w=500", desc: "Máy tính xách tay tiêu chuẩn cho nhân viên NexTrade. Tích hợp sẵn VPN nội bộ." },
-    { id: 2, name: "Secure Token Gen2", price: "1.200.000đ", img: "https://images.unsplash.com/photo-1563986768609-322da13575f3?w=500", desc: "Thiết bị xác thực 2 lớp dùng để đăng nhập hệ thống nội bộ." },
-    { id: 3, name: "Logistics Tablet", price: "8.500.000đ", img: "https://images.unsplash.com/photo-1544244015-0df4b3ffc6b0?w=500", desc: "Máy tính bảng kiểm kho chuyên dụng, chống sốc, chống nước." },
-    { id: 4, name: "Màn hình cong 34 inch", price: "15.000.000đ", img: "https://images.unsplash.com/photo-1527443224154-c4a3942d3acf?w=500", desc: "Màn hình ultrawide cho phòng vận hành logistics theo dõi bản đồ." },
-    { id: 5, name: "Bàn phím cơ Silent", price: "2.500.000đ", img: "https://images.unsplash.com/photo-1511467687858-23d96c32e4ae?w=500", desc: "Bàn phím cơ chống ồn, phù hợp môi trường văn phòng đông người." },
-    { id: 6, name: "Ghế công thái học", price: "4.500.000đ", img: "https://images.unsplash.com/photo-1505797149-43b0069ec26b?w=500", desc: "Ghế lưới thoáng khí, bảo vệ cột sống cho nhân viên ngồi lâu." },
-    { id: 7, name: "Micro họp trực tuyến", price: "3.200.000đ", img: "https://images.unsplash.com/photo-1590602847861-f357a9332bbc?w=500", desc: "Micro không dây đa hướng dành cho phòng họp công ty." },
-    { id: 8, name: "Server Blade System", price: "120.000.000đ", img: "https://th.bing.com/th/id/OIP.wONyyIPQsX5iI_TKHF_x6wHaGM?w=203&h=180&c=7&r=0&o=7&dpr=1.1&pid=1.7&rm=3", desc: "Hệ thống máy chủ xử lý dữ liệu đơn hàng khối lượng lớn." },
-    { id: 9, name: "Máy quét thẻ nhân viên", price: "800.000đ", img: "https://images.unsplash.com/photo-1563013544-824ae1b704d3?w=500", desc: "Thiết bị đọc mã vạch 2D và thẻ từ RFID." },
-    { id: 10, name: "Tai nghe chống ồn", price: "1.800.000đ", img: "https://images.unsplash.com/photo-1505740420928-5e560c06d30e?w=500", desc: "Tai nghe tích hợp mic lọc âm, chuyên dụng cho phòng CSKH." }
-  ];
-
-  // 2. Kho đánh giá riêng biệt cho từng sản phẩm
-  const reviewsDatabase = {
-    1: [
-      { id: 101, user: "Nguyễn Văn Nam (IT)", content: "Máy chạy bộ Adobe mượt, pin dùng tầm 6 tiếng ổn.", star: 5 },
-      { id: 102, user: "Trần Thị Lan (Kế toán)", content: "Bàn phím gõ êm, màn hình hơi ám xanh xíu.", star: 4 },
-      { id: 103, user: "Hacker_Lord", content: "Máy này có lỗ hổng <img src=x onerror=alert('Pwned')> nè!", star: 1 },
-      { id: 104, user: "Quản lý kho", content: "Hơi nặng khi mang đi công tác.", star: 3 }
-    ],
-    2: [
-      { id: 201, user: "Admin Hệ thống", content: "Xác thực nhanh, chưa thấy lỗi đồng bộ.", star: 5 },
-      { id: 202, user: "Lê Minh", content: "Vỏ nhựa hơi mỏng, sợ rơi là vỡ.", star: 3 },
-      { id: 203, user: "Bảo mật viên", content: "Dùng cho MFA rất tốt, an tâm hơn hẳn.", star: 5 },
-      { id: 204, user: "Nhân viên mới", content: "Nhỏ gọn, dễ cài đặt.", star: 4 }
-    ],
-    3: [
-      { id: 301, user: "Đội Vận chuyển", content: "Quét mã vạch siêu nhạy, rơi từ độ cao 1m vẫn chạy tốt.", star: 5 },
-      { id: 302, user: "Huy Logistics", content: "Màn hình sáng, ra nắng vẫn nhìn rõ đơn hàng.", star: 5 },
-      { id: 303, user: "Anh tài xế", content: "Cảm ứng đôi khi hơi lag khi dùng găng tay.", star: 3 },
-      { id: 304, user: "Sếp Tổng", content: "Đầu tư đáng tiền cho bộ phận kho.", star: 5 }
-    ],
-    4: [
-      { id: 401, user: "Designer NexTrade", content: "Màu chuẩn 99% sRGB, làm đồ họa bao phê.", star: 5 },
-      { id: 402, user: "Hoàng IT", content: "Chia đôi màn hình code cực sướng.", star: 5 },
-      { id: 403, user: "Trực ca đêm", content: "Có chế độ lọc ánh sáng xanh, không mỏi mắt.", star: 4 },
-      { id: 404, user: "Khách tham quan", content: "Nhìn chuyên nghiệp, văn phòng sang hẳn lên.", star: 5 }
-    ],
-    5: [
-        { id: 501, user: "Trung UEH", content: "Phím gõ sướng tay, không gây tiếng ồn cho đồng nghiệp.", star: 5 },
-        { id: 502, user: "Thư ký tòa soạn", content: "Cảm giác bấm rất chắc chắn, led đơn giản đẹp.", star: 4 },
-        { id: 503, user: "Game thủ nửa mùa", content: "Dùng để gõ báo cáo thì được, chơi game hơi chậm.", star: 3 },
-        { id: 504, user: "Kỹ thuật viên", content: "Bền, chống nước nhẹ.", star: 5 }
-    ],
-    6: [
-        { id: 601, user: "Bác sĩ xương khớp", content: "Thiết kế tốt cho cột sống nhân viên văn phòng.", star: 5 },
-        { id: 602, user: "Chị Hạnh HR", content: "Ngồi cả ngày không thấy mỏi lưng.", star: 5 },
-        { id: 603, user: "Anh béo", content: "Chân đế hơi yếu khi ngả lưng sâu.", star: 3 },
-        { id: 604, user: "Nhân viên lâu năm", content: "Ước gì công ty trang bị cho cả phòng sớm hơn.", star: 5 }
-    ],
-    7: [
-        { id: 701, user: "Trưởng phòng họp", content: "Bắt tiếng xa 5m vẫn rõ, lọc nhiễu tốt.", star: 5 },
-        { id: 702, user: "Kỹ thuật Zoom", content: "Cắm là chạy, không cần cài driver phức tạp.", star: 5 },
-        { id: 703, user: "Thành viên họp", content: "Thỉnh thoảng bị hú nếu để gần loa.", star: 2 },
-        { id: 704, user: "Admin", content: "Thiết kế sang trọng cho phòng khách.", star: 4 }
-    ],
-    8: [
-        { id: 801, user: "CTO NexTrade", content: "Hiệu năng vượt trội, xử lý 1 triệu đơn hàng/giây mượt.", star: 5 },
-        { id: 802, user: "Data Engineer", content: "Dễ dàng bảo trì và thay thế nóng linh kiện.", star: 5 },
-        { id: 803, user: "Anh trực phòng Server", content: "Quạt kêu hơi to, đứng cạnh đau tai.", star: 3 },
-        { id: 804, user: "Auditor", content: "Đầy đủ log và tính năng bảo mật.", star: 4 }
-    ],
-    9: [
-        { id: 901, user: "Lễ tân", content: "Nhận diện thẻ nhanh dưới 0.5 giây.", star: 5 },
-        { id: 902, user: "Bảo vệ", content: "Máy bền, hoạt động 24/7 không lỗi.", star: 5 },
-        { id: 903, user: "Nhân viên quên thẻ", content: "Giá như tích hợp luôn khuôn mặt.", star: 3 },
-        { id: 904, user: "IT Support", content: "Kết nối LAN ổn định.", star: 4 }
-    ],
-    10: [
-        { id: 1001, user: "Tư vấn viên", content: "Khử tiếng ồn xung quanh cực tốt khi gọi cho khách.", star: 5 },
-        { id: 1002, user: "Học viên", content: "Đeo cả ca 8 tiếng không bị đau tai.", star: 5 },
-        { id: 1003, user: "Cộng tác viên", content: "Dây hơi ngắn, bất tiện khi đứng dậy.", star: 3 },
-        { id: 1004, user: "Phòng đào tạo", content: "Âm thanh rõ ràng, mic nhạy.", star: 5 }
-    ]
-  };
-
-  const currentProduct = productDatabase.find(p => p.id === productId);
-  
-  // State quản lý danh sách đánh giá hiện tại (Lấy từ database theo ID)
+  const [product, setProduct] = useState(null);
   const [reviews, setReviews] = useState([]);
-  const [inputName, setInputName] = useState('');
-  const [inputContent, setInputContent] = useState('');
+  const [quantity, setQuantity] = useState(1);
+  const [showStockChecker, setShowStockChecker] = useState(false);
+  const [inWishlist, setInWishlist] = useState(false);
+  const [loading, setLoading] = useState(true);
+  
+  // Form states
+  const [reviewForm, setReviewForm] = useState({
+    author: '',
+    content: '',
+    rating: 5
+  });
 
-  // Tự động cập nhật đánh giá khi ID sản phẩm thay đổi
-useEffect(() => {
-    // Gọi Endpoint phụ: Lấy danh sách reviews từ Database
-    const fetchReviews = async () => {
-      try {
-        const response = await fetch(`http://localhost:8000/api/products/reviews/${productId}`);
-        const data = await response.json();
-        setReviews(data); // Backend trả JSON bình thường, Frontend tự dính đòn XSS vì dùng innerHTML
-      } catch (error) {
-        console.error("Lỗi lấy review:", error);
-      }
-    };
+  useEffect(() => {
+    fetchProduct();
     fetchReviews();
   }, [productId]);
 
-  const handlePostReview = async () => {
-    if (!inputContent) return;
-    
+  const fetchProduct = async () => {
     try {
-      // Gọi Endpoint 2: Gửi POST kèm nội dung có mã độc
-      await fetch('http://localhost:8000/api/products/reviews', {
+      const response = await fetch(`http://localhost:8000/api/products/${productId}`);
+      const data = await response.json();
+      setProduct(data);
+      setLoading(false);
+    } catch (error) {
+      console.error('Error fetching product:', error);
+      setLoading(false);
+    }
+  };
+
+  const fetchReviews = async () => {
+    try {
+      const response = await fetch(`http://localhost:8000/api/products/${productId}/reviews`);
+      const data = await response.json();
+      setReviews(data);
+    } catch (error) {
+      console.error('Error fetching reviews:', error);
+    }
+  };
+
+  const handlePostReview = async () => {
+    if (!reviewForm.content) {
+      alert('Please enter review content');
+      return;
+    }
+
+    try {
+      // VULNERABLE: Stored XSS - No HTML escaping on backend
+      // Try injecting: <img src=x onerror=alert('XSS')>
+      const response = await fetch(`http://localhost:8000/api/products/${productId}/reviews`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           product_id: productId,
-          author: inputName || "Ẩn danh",
-          content: inputContent, // Chỗ này nhập <script>alert(document.cookie)</script>
-          star: 5
+          author: reviewForm.author || 'Anonymous',
+          content: reviewForm.content,
+          rating: reviewForm.rating
         })
       });
 
-      // Gửi thành công thì xóa ô nhập và load lại danh sách để popup tự nổ
-      setInputContent('');
-      // Gọi lại API lấy review để cập nhật màn hình
-      const res = await fetch(`http://localhost:8000/api/products/reviews/${productId}`);
-      setReviews(await res.json());
-      
+      if (response.ok) {
+        setReviewForm({ author: '', content: '', rating: 5 });
+        fetchReviews();
+      }
     } catch (error) {
-      console.error("Lỗi gửi review:", error);
+      console.error('Error posting review:', error);
     }
   };
 
-  if (!currentProduct) return <div style={{padding: '50px', textAlign: 'center'}}>Sản phẩm không tồn tại!</div>;
+  const formatCurrency = (price) => {
+    return new Intl.NumberFormat('vi-VN', { 
+      style: 'currency', 
+      currency: 'VND' 
+    }).format(price);
+  };
+
+  const addToCart = () => {
+    alert(`Added ${quantity} x ${product.name} to cart`);
+  };
+
+  if (loading) {
+    return <div className="flex items-center justify-center min-h-screen">Loading...</div>;
+  }
+
+  if (!product) {
+    return (
+      <div className="flex items-center justify-center min-h-screen">
+        <div className="text-center">
+          <h1 className="text-3xl font-bold text-gray-800 mb-4">Product not found</h1>
+          <Link to="/products" className="text-blue-600 hover:text-blue-700 underline">
+            Back to catalog
+          </Link>
+        </div>
+      </div>
+    );
+  }
 
   return (
-    <div style={{ background: '#f4f7f9', minHeight: '100vh', padding: '40px', fontFamily: 'sans-serif' }}>
-      <div style={{ maxWidth: '950px', margin: '0 auto', background: 'white', padding: '30px', borderRadius: '12px', boxShadow: '0 4px 20px rgba(0,0,0,0.08)' }}>
-        
-        {/* THÔNG TIN SẢN PHẨM */}
-        <div style={{ display: 'flex', gap: '40px', borderBottom: '2px solid #eee', paddingBottom: '30px', marginBottom: '30px' }}>
-          <img src={currentProduct.img} style={{ width: '380px', height: '280px', objectFit: 'cover', borderRadius: '8px', border: '1px solid #ddd' }} alt="Detail" />
-          <div style={{ flex: 1 }}>
-            <h1 style={{ color: '#001f3f', margin: '0 0 15px 0' }}>{currentProduct.name}</h1>
-            <p style={{ color: '#d70018', fontSize: '28px', fontWeight: 'bold', margin: '10px 0' }}>{currentProduct.price}</p>
-            <p style={{ color: '#555', lineHeight: '1.7', fontSize: '15px' }}>{currentProduct.desc}</p>
-            <div style={{ marginTop: '20px', padding: '10px', background: '#f8f9fa', borderRadius: '6px' }}>
-              <p style={{ margin: '5px 0' }}><strong>Mã tài sản:</strong> NX-{currentProduct.id}</p>
-              <p style={{ margin: '5px 0' }}><strong>Phòng ban:</strong> Vật tư Logistics</p>
+    <div className="min-h-screen bg-gradient-to-br from-slate-50 to-slate-100">
+      {/* Breadcrumb */}
+      <div className="bg-white border-b sticky top-0 z-30">
+        <div className="max-w-7xl mx-auto px-4 py-4 flex gap-2 text-sm">
+          <Link to="/" className="text-blue-600 hover:text-blue-700">Home</Link>
+          <span className="text-gray-400">/</span>
+          <Link to="/products" className="text-blue-600 hover:text-blue-700">Products</Link>
+          <span className="text-gray-400">/</span>
+          <span className="text-gray-600">{product.name}</span>
+        </div>
+      </div>
+
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-8 mb-12">
+          {/* Product Image */}
+          <div className="bg-white rounded-xl shadow-lg overflow-hidden sticky top-24">
+            <img
+              src={product.image_url}
+              alt={product.name}
+              className="w-full h-96 object-cover"
+            />
+          </div>
+
+          {/* Product Details */}
+          <div className="space-y-6">
+            {/* Header Info */}
+            <div className="bg-white rounded-xl shadow-md p-6">
+              <p className="text-sm text-blue-600 font-semibold">{product.category_name}</p>
+              <h1 className="text-3xl font-bold text-gray-800 mt-2">{product.name}</h1>
+              
+              {/* Rating */}
+              <div className="flex items-center gap-3 mt-4">
+                <div className="flex items-center gap-1">
+                  <span className="text-2xl">⭐ {product.rating.toFixed(1)}</span>
+                  <span className="text-gray-500">({product.rating_count} reviews)</span>
+                </div>
+              </div>
+
+              {/* Price */}
+              <div className="mt-4 pt-4 border-t border-gray-200">
+                <p className="text-4xl font-bold text-blue-900">{formatCurrency(product.price)}</p>
+              </div>
+
+              {/* Availability */}
+              <div className={`mt-4 inline-block px-4 py-2 rounded-full text-sm font-semibold ${
+                product.availability_status === 'In Stock' ? 'bg-green-100 text-green-800' :
+                product.availability_status === 'Low Stock' ? 'bg-orange-100 text-orange-800' :
+                product.availability_status === 'Out of Stock' ? 'bg-red-100 text-red-800' :
+                'bg-blue-100 text-blue-800'
+              }`}>
+                {product.availability_status}
+              </div>
+            </div>
+
+            {/* Description */}
+            <div className="bg-white rounded-xl shadow-md p-6">
+              <h3 className="text-lg font-bold text-gray-800 mb-3">Description</h3>
+              <p className="text-gray-700 leading-relaxed">{product.description}</p>
+            </div>
+
+            {/* Purchase Section */}
+            <div className="bg-white rounded-xl shadow-md p-6 space-y-4">
+              {/* Quantity */}
+              <div>
+                <label className="block text-sm font-semibold text-gray-700 mb-2">Quantity</label>
+                <div className="flex items-center border border-gray-300 rounded-lg w-fit">
+                  <button
+                    onClick={() => setQuantity(Math.max(1, quantity - 1))}
+                    className="px-4 py-2 text-gray-600 hover:bg-gray-100"
+                  >
+                    −
+                  </button>
+                  <span className="px-6 py-2 font-semibold">{quantity}</span>
+                  <button
+                    onClick={() => setQuantity(quantity + 1)}
+                    className="px-4 py-2 text-gray-600 hover:bg-gray-100"
+                  >
+                    +
+                  </button>
+                </div>
+              </div>
+
+              {/* Buttons */}
+              <div className="flex gap-3 pt-2">
+                <button
+                  onClick={addToCart}
+                  disabled={product.availability_status === 'Out of Stock'}
+                  className="flex-1 px-6 py-3 bg-blue-600 text-white rounded-lg font-semibold hover:bg-blue-700 transition disabled:bg-gray-400 disabled:cursor-not-allowed"
+                >
+                  🛒 Add to Cart
+                </button>
+                <button
+                  onClick={() => setInWishlist(!inWishlist)}
+                  className={`px-6 py-3 rounded-lg font-semibold transition ${
+                    inWishlist
+                      ? 'bg-red-100 text-red-600 hover:bg-red-200'
+                      : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
+                  }`}
+                >
+                  {inWishlist ? '❤️ In Wishlist' : '🤍 Add to Wishlist'}
+                </button>
+              </div>
+
+              {/* Stock Checker */}
+              <button
+                onClick={() => setShowStockChecker(true)}
+                className="w-full px-6 py-3 bg-purple-600 text-white rounded-lg font-semibold hover:bg-purple-700 transition"
+              >
+                📊 Check Regional Stock
+              </button>
             </div>
           </div>
         </div>
 
-        {/* FORM GỬI ĐÁNH GIÁ (TEST XSS) */}
-        <div style={{ background: '#001f3f0d', padding: '25px', borderRadius: '10px', marginBottom: '40px' }}>
-          <h3 style={{ color: '#001f3f', marginTop: 0 }}>Gửi phản hồi nội bộ</h3>
-          <input 
-            type="text" placeholder="Họ tên nhân viên..." 
-            value={inputName} onChange={(e) => setInputName(e.target.value)}
-            style={{ width: '100%', padding: '12px', marginBottom: '12px', border: '1px solid #ccc', borderRadius: '6px' }} 
-          />
-          <textarea 
-            placeholder="Nội dung phản hồi (Dùng để kiểm thử bảo mật)..." 
-            value={inputContent} onChange={(e) => setInputContent(e.target.value)}
-            style={{ width: '100%', padding: '12px', height: '90px', marginBottom: '12px', border: '1px solid #ccc', borderRadius: '6px' }}
-          ></textarea>
-          <button 
-            onClick={handlePostReview}
-            style={{ width: '100%', background: '#001f3f', color: 'white', padding: '14px', border: 'none', borderRadius: '6px', fontWeight: 'bold', cursor: 'pointer' }}
-          > Gửi Đánh Giá </button>
-        </div>
+        {/* Reviews Section */}
+        <div className="bg-white rounded-xl shadow-lg p-8">
+          <h2 className="text-2xl font-bold text-gray-800 mb-8">Customer Reviews</h2>
 
-        {/* DANH SÁCH ĐÁNH GIÁ - LỖ HỔNG XSS Ở ĐÂY */}
-        <div>
-          <h3 style={{ borderLeft: '5px solid #001f3f', paddingLeft: '15px', color: '#001f3f' }}>Phản hồi từ nhân viên ({reviews.length})</h3>
-          {reviews.map(r => (
-            <div key={r.id} style={{ padding: '20px 0', borderBottom: '1px solid #eee' }}>
-              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                <strong style={{ fontSize: '16px' }}>{r.user}</strong>
-                <span style={{ color: '#f39c12' }}>{'★'.repeat(r.star || 5)}</span>
-              </div>
-              {/* VŨ KHÍ XSS: dangerouslySetInnerHTML */}
-              <div 
-                style={{ marginTop: '10px', color: '#444', lineHeight: '1.5' }} 
-                dangerouslySetInnerHTML={{ __html: r.content }} 
+          {/* POST REVIEW FORM - VULNERABLE TO STORED XSS */}
+          <div className="bg-gradient-to-br from-blue-50 to-blue-100 rounded-xl p-6 mb-8 border border-blue-200">
+            <h3 className="text-lg font-bold text-gray-800 mb-4">Share Your Review</h3>
+            <div className="space-y-4">
+              <input
+                type="text"
+                placeholder="Your name (or leave anonymous)"
+                value={reviewForm.author}
+                onChange={(e) => setReviewForm({...reviewForm, author: e.target.value})}
+                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
               />
+              
+              <textarea
+                placeholder="Share your experience... (Try: <img src=x onerror=alert('XSS')> for security testing)"
+                value={reviewForm.content}
+                onChange={(e) => setReviewForm({...reviewForm, content: e.target.value})}
+                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 h-24 font-mono text-sm"
+              />
+
+              <div>
+                <label className="block text-sm font-semibold text-gray-700 mb-2">Rating</label>
+                <select
+                  value={reviewForm.rating}
+                  onChange={(e) => setReviewForm({...reviewForm, rating: parseInt(e.target.value)})}
+                  className="px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                >
+                  <option value={5}>⭐⭐⭐⭐⭐ Excellent</option>
+                  <option value={4}>⭐⭐⭐⭐ Good</option>
+                  <option value={3}>⭐⭐⭐ Average</option>
+                  <option value={2}>⭐⭐ Poor</option>
+                  <option value={1}>⭐ Very Poor</option>
+                </select>
+              </div>
+
+              <button
+                onClick={handlePostReview}
+                className="w-full px-6 py-3 bg-blue-600 text-white rounded-lg font-semibold hover:bg-blue-700 transition"
+              >
+                Post Review
+              </button>
+
+              <p className="text-xs text-blue-700 bg-blue-50 p-3 rounded">
+                💡 Note: Reviews are vulnerable to Stored XSS for security testing purposes. Do not post sensitive data.
+              </p>
             </div>
-          ))}
+          </div>
+
+          {/* REVIEWS LIST - VULNERABLE TO XSS via dangerouslySetInnerHTML */}
+          <div className="space-y-4">
+            <h3 className="font-bold text-gray-800">Recent Reviews ({reviews.length})</h3>
+            {reviews.length > 0 ? (
+              reviews.map(review => (
+                <div key={review.id} className="border border-gray-200 rounded-lg p-4 hover:shadow-md transition">
+                  <div className="flex justify-between items-start mb-2">
+                    <div>
+                      <p className="font-semibold text-gray-800">{review.author}</p>
+                      <p className="text-sm text-gray-500">Rating: {'⭐'.repeat(review.rating)}</p>
+                    </div>
+                    <p className="text-xs text-gray-400">{new Date(review.created_at).toLocaleDateString()}</p>
+                  </div>
+                  {/* VULNERABLE: This allows XSS attacks to execute */}
+                  <div 
+                    className="text-gray-700 leading-relaxed"
+                    dangerouslySetInnerHTML={{ __html: review.content }}
+                  />
+                </div>
+              ))
+            ) : (
+              <p className="text-gray-500">No reviews yet. Be the first to review this product!</p>
+            )}
+          </div>
         </div>
       </div>
+
+      {/* Stock Checker Modal */}
+      {showStockChecker && (
+        <StockCheckerModal
+          product={product}
+          onClose={() => setShowStockChecker(false)}
+        />
+      )}
     </div>
   );
 };
