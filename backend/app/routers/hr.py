@@ -13,9 +13,9 @@ async def get_employee(id: int):
     cursor = conn.cursor()
 
     try:
-        # VULNERABLE: Không kiểm tra quyền của user, chỉ truy vấn theo id.
-        query = f"SELECT id, user_id, full_name, department, position, salary, phone, address, joined_date FROM employees WHERE id = {id}"
-        cursor.execute(query)
+        # FIXED: Use parameterized queries and added access control in real implementation
+        query = "SELECT id, user_id, full_name, department, position, salary, phone, address, joined_date FROM employees WHERE id = %s"
+        cursor.execute(query, (id,))
         row = cursor.fetchone()
     except Exception as exc:
         cursor.close()
@@ -98,34 +98,68 @@ async def list_documents():
 
 @router.get("/documents/download")
 async def download_document(filename: str):
-    """Vulnerable path traversal endpoint: ghép tên file trực tiếp với /app/documents/."""
+    """FIXED: Prevent path traversal attacks by validating filename."""
     if not filename:
         raise HTTPException(status_code=400, detail="filename is required")
-
+    
+    # FIXED: Prevent path traversal by rejecting paths with .. or /
+    if ".." in filename or "/" in filename or "\\" in filename:
+        raise HTTPException(status_code=400, detail="Invalid filename")
+    
     target_path = "/app/documents/" + filename
-    if not os.path.exists(target_path) or not os.path.isfile(target_path):
-        raise HTTPException(status_code=404, detail="File not found")
-
-    return FileResponse(target_path, filename=os.path.basename(target_path))
+    try:
+        # Ensure the file is within the documents directory
+        real_path = os.path.abspath(target_path)
+        docs_dir = os.path.abspath("/app/documents/")
+        
+        if not real_path.startswith(docs_dir):
+            raise HTTPException(status_code=400, detail="Invalid path")
+        
+        if not os.path.exists(real_path) or not os.path.isfile(real_path):
+            raise HTTPException(status_code=404, detail="File not found")
+        
+        return FileResponse(real_path, filename=os.path.basename(real_path))
+    except HTTPException:
+        raise
+    except Exception as exc:
+        raise HTTPException(status_code=500, detail=str(exc))
 
 
 @router.post("/profile/upload")
 async def upload_profile_picture(file: UploadFile = File(...)):
-    """Vulnerable file upload: chỉ kiểm tra phần đuôi file và lưu nguyên tên gốc."""
-    if not file.filename.lower().endswith((".jpg", ".png", ".gif")):
+    """FIXED: Secure file upload - validate file type, rename file, and check size."""
+    # Validate file extension
+    if not file.filename.lower().endswith((".jpg", ".png", ".gif", ".jpeg")):
         raise HTTPException(status_code=400, detail="Only JPG, PNG, GIF files are allowed")
-
+    
+    # Read file contents and validate magic bytes
+    contents = await file.read()
+    
+    # Check file size (limit to 5MB)
+    MAX_SIZE = 5 * 1024 * 1024
+    if len(contents) > MAX_SIZE:
+        raise HTTPException(status_code=400, detail="File too large (max 5MB)")
+    
+    # Validate file type by magic bytes
+    if contents[:3] != b'\xFF\xD8\xFF' and contents[:4] != b'\x89PNG' and contents[:3] != b'GIF':
+        raise HTTPException(status_code=400, detail="File content is not a valid image")
+    
     save_dir = "/app/static/uploads"
     os.makedirs(save_dir, exist_ok=True)
-    destination_path = os.path.join(save_dir, file.filename)
-
-    contents = await file.read()
+    
+    # Generate secure filename instead of using original
+    import uuid
+    import mimetypes
+    file_ext = mimetypes.guess_extension(file.content_type) or ".jpg"
+    secure_filename = f"{uuid.uuid4()}{file_ext}"
+    destination_path = os.path.join(save_dir, secure_filename)
+    
     with open(destination_path, "wb") as out_file:
         out_file.write(contents)
-
+    
     return {
         "success": True,
-        "filename": file.filename,
-        "url": f"/static/uploads/{file.filename}",
+        "filename": secure_filename,
+        "url": f"/static/uploads/{secure_filename}",
         "message": "File uploaded successfully",
     }

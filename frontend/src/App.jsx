@@ -1,5 +1,6 @@
 import React from 'react'
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom'
+import Login from './pages/Login'
 import ProductCatalog from './pages/ProductCatalog'
 import ProductDetail from './pages/ProductDetail'
 import ITToolsPage from './pages/ITToolsPage'
@@ -12,6 +13,7 @@ function App() {
     <BrowserRouter>
       <div className="min-h-screen bg-gray-50 p-4">
         <Routes>
+          <Route path="/login" element={<Login />} />
           <Route path="/" element={<Navigate to="/products" replace />} />
           <Route path="/products" element={<ProductCatalog />} />
           <Route path="/products/:id" element={<ProductDetail />} />

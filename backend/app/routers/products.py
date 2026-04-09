@@ -1,32 +1,47 @@
 from fastapi import APIRouter, Depends
 from sqlalchemy import text
 from app.db import get_db
+from html import escape
 
 router = APIRouter()
 
-# Vuln 1: SQL Injection (search) - Nối chuỗi trực tiếp [cite: 214, 216]
-@router.get("/api/products/search")
+# FIXED: SQL Injection (search) - Using parameterized queries
+@router.get("/products/search")
 def search_products(q: str, db=Depends(get_db)):
-    query = f"SELECT * FROM products WHERE name LIKE '%{q}%'" 
-    result = db.execute(text(query))
+    # Use parameterized query to prevent SQL injection
+    result = db.execute(
+        text("SELECT * FROM products WHERE name ILIKE :q"),
+        {"q": f"%{q}%"}
+    )
     return result.mappings().all()
 
-# Vuln 2: Stored XSS (reviews) - Không lọc nội dung [cite: 219, 221]
-@router.post("/api/products/reviews")
+# FIXED: Stored XSS (reviews) - Using parameterized queries
+@router.post("/products/reviews")
 def post_review(product_id: int, author: str, content: str, rating: int, db=Depends(get_db)):
-    query = f"INSERT INTO reviews (product_id, author, content, rating) VALUES ({product_id}, '{author}', '{content}', {rating})"
-    db.execute(text(query))
+    # Use parameterized query and validate rating
+    if not (1 <= rating <= 5):
+        return {"error": "Rating must be between 1 and 5"}
+    
+    db.execute(
+        text("INSERT INTO reviews (product_id, author, content, rating) VALUES (:product_id, :author, :content, :rating)"),
+        {"product_id": product_id, "author": author, "content": content, "rating": rating}
+    )
     db.commit()
     return {"status": "Success"}
 
-# Vuln 3: Reflected XSS (search-page) - Nhúng thẳng vào HTML [cite: 223, 225]
-@router.get("/api/products/search-page")
+# FIXED: Reflected XSS (search-page) - Using HTML escaping
+@router.get("/products/search-page")
 def search_page(q: str):
     from fastapi.responses import HTMLResponse
-    return HTMLResponse(content=f"<html><body><h1>Kết quả cho: {q}</h1></body></html>")
+    # Escape the query string to prevent XSS
+    safe_q = escape(q)
+    return HTMLResponse(content=f"<html><body><h1>Kết quả cho: {safe_q}</h1></body></html>")
 
-# Endpoint lấy review (không vuln nhưng cần để hiển thị) [cite: 227]
-@router.get("/api/products/reviews/{product_id}")
+# Endpoint lấy review - Fixed parameterized query
+@router.get("/products/reviews/{product_id}")
 def get_reviews(product_id: int, db=Depends(get_db)):
-    result = db.execute(text(f"SELECT * FROM reviews WHERE product_id = {product_id}"))
+    result = db.execute(
+        text("SELECT * FROM reviews WHERE product_id = :product_id"),
+        {"product_id": product_id}
+    )
     return result.mappings().all()

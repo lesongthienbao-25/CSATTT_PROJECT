@@ -19,18 +19,18 @@ async def login(
     conn = get_raw_connection()
     cursor = conn.cursor()
 
-    # VULNERABLE: nối chuỗi thẳng vào SQL
-    query = f"SELECT * FROM users WHERE username = '{username}' AND password = '{password}'"
+    # FIXED: Use parameterized queries instead of string concatenation
+    query = "SELECT * FROM users WHERE username = %s AND password = %s"
 
     try:
-        cursor.execute(query)
+        cursor.execute(query, (username, password))
         user = cursor.fetchone()
     except Exception as e:
         cursor.close()
         conn.close()
         return JSONResponse(
             status_code=500,
-            content={"error": str(e), "query": query}   # lộ query để dễ debug/demo
+            content={"error": str(e)}
         )
 
     cursor.close()
