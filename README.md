@@ -138,3 +138,5 @@ Where `[service_name]` is one of: `db`, `backend`, `frontend`, `nginx`
 ## License
 
 Internal use only.
+
+Vinh if you are reading this, just letting you know that you are no more than an asshole who just waving hands and fingers to give orders and requirements instead of ACTUAL leadership
