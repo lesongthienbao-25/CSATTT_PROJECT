@@ -15,9 +15,17 @@ const ProductCatalog = () => {
   return saved ? JSON.parse(saved) : null;
 }); 
   const [showLoginModal, setShowLoginModal] = useState(false);
+  const [showSignupModal, setShowSignupModal] = useState(false);
   const [usernameInput, setUsernameInput] = useState('');
   const [passwordInput, setPasswordInput] = useState('');
   const [loginError, setLoginError] = useState('');
+  const [signupUsername, setSignupUsername] = useState('');
+  const [signupPassword, setSignupPassword] = useState('');
+  const [signupError, setSignupError] = useState('');
+  const [registeredUsers, setRegisteredUsers] = useState(() => {
+    const saved = sessionStorage.getItem('registeredUsers');
+    return saved ? JSON.parse(saved) : [];
+  });
   
   const [appliedFilters, setAppliedFilters] = useState({
     category: false,
@@ -48,10 +56,16 @@ const ProductCatalog = () => {
 
   const handleLogin = (e) => {
   e.preventDefault();
-  const user = validAccounts.find(u => u.username === usernameInput && u.password === passwordInput);
+  let user = validAccounts.find(u => u.username === usernameInput && u.password === passwordInput);
+  
+  // Check registered users if not found in valid accounts
+  if (!user) {
+    user = registeredUsers.find(u => u.username === usernameInput && u.password === passwordInput);
+  }
+  
   if (user) {
     setCurrentUser(user);
-    sessionStorage.setItem('currentUser', JSON.stringify(user)); // thêm dòng này
+    sessionStorage.setItem('currentUser', JSON.stringify(user));
     setShowLoginModal(false);
     setUsernameInput('');
     setPasswordInput('');
@@ -63,8 +77,59 @@ const ProductCatalog = () => {
 
  const handleLogout = () => {
   setCurrentUser(null);
-  sessionStorage.removeItem('currentUser'); // thêm dòng này
+  sessionStorage.removeItem('currentUser');
 };
+
+  const handleSignup = (e) => {
+    e.preventDefault();
+    setSignupError('');
+    
+    if (!signupUsername || !signupPassword) {
+      setSignupError('Vui lòng nhập tên đăng nhập và mật khẩu');
+      return;
+    }
+
+    if (signupUsername.length < 3) {
+      setSignupError('Tên đăng nhập phải có ít nhất 3 ký tự');
+      return;
+    }
+
+    if (signupPassword.length < 6) {
+      setSignupError('Mật khẩu phải có ít nhất 6 ký tự');
+      return;
+    }
+
+    // Check if username already exists
+    const userExists = registeredUsers.some(u => u.username === signupUsername) || 
+                       validAccounts.some(u => u.username === signupUsername);
+    
+    if (userExists) {
+      setSignupError('Tên đăng nhập đã tồn tại');
+      return;
+    }
+
+    // Create new user
+    const newUser = {
+      username: signupUsername,
+      password: signupPassword,
+      role: 'customer',
+      name: signupUsername
+    };
+
+    // Save to registered users list
+    const updatedUsers = [...registeredUsers, newUser];
+    setRegisteredUsers(updatedUsers);
+    sessionStorage.setItem('registeredUsers', JSON.stringify(updatedUsers));
+
+    // Auto login
+    setCurrentUser(newUser);
+    sessionStorage.setItem('currentUser', JSON.stringify(newUser));
+
+    // Close modal and reset
+    setShowSignupModal(false);
+    setSignupUsername('');
+    setSignupPassword('');
+  };
   
   useEffect(() => {
     fetchProducts();
@@ -249,12 +314,20 @@ const ProductCatalog = () => {
                 </button>
               </div>
             ) : (
-              <button 
-                onClick={() => setShowLoginModal(true)}
-                className="px-4 py-2 bg-blue-50 text-blue-600 border border-blue-200 hover:bg-blue-100 rounded-lg font-bold shadow transition-all text-sm"
-              >
-                Đăng nhập
-              </button>
+              <div className="flex gap-2">
+                <button 
+                  onClick={() => setShowLoginModal(true)}
+                  className="px-4 py-2 bg-blue-50 text-blue-600 border border-blue-200 hover:bg-blue-100 rounded-lg font-bold shadow transition-all text-sm"
+                >
+                  Đăng nhập
+                </button>
+                <button 
+                  onClick={() => setShowSignupModal(true)}
+                  className="px-4 py-2 bg-green-50 text-green-600 border border-green-200 hover:bg-green-100 rounded-lg font-bold shadow transition-all text-sm"
+                >
+                  Đăng ký
+                </button>
+              </div>
             )}
           </div>
         </div>
@@ -506,6 +579,56 @@ const ProductCatalog = () => {
             </form>
             <button 
               onClick={() => setShowLoginModal(false)}
+              className="w-full mt-3 py-2 text-gray-500 hover:bg-gray-100 rounded-lg transition font-semibold text-sm"
+            >
+              Hủy
+            </button>
+          </div>
+        </div>
+      )}
+
+      {showSignupModal && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+          <div className="bg-white rounded-xl shadow-2xl p-8 w-96 max-w-full">
+            <h2 className="text-2xl font-bold text-gray-800 mb-6 text-center">Đăng ký tài khoản</h2>
+            <form onSubmit={handleSignup} className="space-y-4">
+              <div>
+                <label className="block text-sm font-semibold text-gray-700 mb-1">Tên đăng nhập</label>
+                <input 
+                  type="text" 
+                  value={signupUsername}
+                  onChange={(e) => setSignupUsername(e.target.value)}
+                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 outline-none text-sm"
+                  placeholder="Nhập tên đăng nhập (ít nhất 3 ký tự)..."
+                  required
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-semibold text-gray-700 mb-1">Mật khẩu</label>
+                <input 
+                  type="password" 
+                  value={signupPassword}
+                  onChange={(e) => setSignupPassword(e.target.value)}
+                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 outline-none text-sm"
+                  placeholder="Nhập mật khẩu (ít nhất 6 ký tự)..."
+                  required
+                />
+              </div>
+              {signupError && <p className="text-red-500 text-sm font-semibold text-center">{signupError}</p>}
+              <button 
+                type="submit" 
+                className="w-full py-2 bg-green-600 text-white rounded-lg font-bold hover:bg-green-700 transition"
+              >
+                Đăng ký
+              </button>
+            </form>
+            <button 
+              onClick={() => {
+                setShowSignupModal(false);
+                setSignupUsername('');
+                setSignupPassword('');
+                setSignupError('');
+              }}
               className="w-full mt-3 py-2 text-gray-500 hover:bg-gray-100 rounded-lg transition font-semibold text-sm"
             >
               Hủy
